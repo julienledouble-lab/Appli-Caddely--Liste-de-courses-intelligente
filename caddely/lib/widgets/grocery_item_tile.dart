@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/grocery_category.dart';
 import '../models/grocery_item.dart';
 import '../theme/app_theme.dart';
+import '../utils/product_icon_utils.dart';
 
 class GroceryItemTile extends StatelessWidget {
   final GroceryItem item;
@@ -21,6 +22,11 @@ class GroceryItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final productIcon = productIconFor(
+      productName: item.name,
+      category: item.category,
+    );
+
     return Dismissible(
       key: Key(item.id),
       direction: DismissDirection.endToStart,
@@ -73,6 +79,24 @@ class GroceryItemTile extends StatelessWidget {
               child: Row(
                 children: [
                   _Checkbox(isPicked: item.isPicked),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: item.isPicked
+                          ? const Color(0xFFF1F5F9)
+                          : Theme.of(context).colorScheme.primary.withAlpha(14),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      productIcon,
+                      size: 18,
+                      color: item.isPicked
+                          ? AppTheme.colorTextSecondary
+                          : Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

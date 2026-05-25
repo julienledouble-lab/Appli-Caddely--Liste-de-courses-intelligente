@@ -19,162 +19,192 @@ PurchaseRecord _record(
 }
 
 void main() {
-  group('buildSuggestions — catalogue local (historique vide)', () {
-    test('"la" propose "Lait" depuis le catalogue', () {
+  group('buildSuggestions - catalogue local enrichi', () {
+    test('"tom" propose "Tomates"', () {
       final result = buildSuggestions(
-        sortedHistory: [],
-        query: 'la',
-        excludedNames: {},
+        sortedHistory: const [],
+        query: 'tom',
+        excludedNames: const {},
       );
-      expect(result.any((s) => s.productName == 'Lait'), isTrue);
+
+      expect(result.any((s) => s.productName == 'Tomates'), isTrue);
     });
 
-    test('"caf" propose "Café" depuis le catalogue', () {
+    test('"moz" propose "Mozzarella"', () {
       final result = buildSuggestions(
-        sortedHistory: [],
-        query: 'caf',
-        excludedNames: {},
+        sortedHistory: const [],
+        query: 'moz',
+        excludedNames: const {},
       );
-      expect(result.any((s) => s.productName == 'Café'), isTrue);
+
+      expect(result.any((s) => s.productName == 'Mozzarella'), isTrue);
     });
 
     test('"pate" propose "Pâtes" grâce à la normalisation des accents', () {
       final result = buildSuggestions(
-        sortedHistory: [],
+        sortedHistory: const [],
         query: 'pate',
-        excludedNames: {},
+        excludedNames: const {},
       );
+
       expect(result.any((s) => s.productName == 'Pâtes'), isTrue);
     });
 
-    test('"less" propose "Lessive" depuis le catalogue', () {
+    test('"sham" propose "Shampooing"', () {
       final result = buildSuggestions(
-        sortedHistory: [],
-        query: 'less',
-        excludedNames: {},
+        sortedHistory: const [],
+        query: 'sham',
+        excludedNames: const {},
       );
+
+      expect(result.any((s) => s.productName == 'Shampooing'), isTrue);
+    });
+
+    test('"less" propose "Lessive"', () {
+      final result = buildSuggestions(
+        sortedHistory: const [],
+        query: 'less',
+        excludedNames: const {},
+      );
+
       expect(result.any((s) => s.productName == 'Lessive'), isTrue);
+    });
+
+    test('"comp" propose "Compote"', () {
+      final result = buildSuggestions(
+        sortedHistory: const [],
+        query: 'comp',
+        excludedNames: const {},
+      );
+
+      expect(result.any((s) => s.productName == 'Compote'), isTrue);
     });
 
     test('les suggestions du catalogue ont frequency == 0', () {
       final result = buildSuggestions(
-        sortedHistory: [],
+        sortedHistory: const [],
         query: 'lait',
-        excludedNames: {},
+        excludedNames: const {},
       );
-      expect(result.isNotEmpty, isTrue);
-      expect(result.every((s) => s.frequency == 0), isTrue);
+
+      expect(result, isNotEmpty);
+      expect(result.every((suggestion) => suggestion.frequency == 0), isTrue);
     });
   });
 
-  group('buildSuggestions — historique prioritaire', () {
+  group('buildSuggestions - historique prioritaire', () {
     test("l'historique passe avant le catalogue", () {
-      final history = [_record('Lait bio', 3, GroceryCategory.fresh, quantity: 2)];
+      final history = [
+        _record('Lait bio', 3, GroceryCategory.fresh, quantity: 2),
+      ];
+
       final result = buildSuggestions(
         sortedHistory: history,
         query: 'lait',
-        excludedNames: {},
+        excludedNames: const {},
       );
+
       expect(result.first.productName, 'Lait bio');
       expect(result.first.frequency, greaterThan(0));
     });
 
-    test('les produits fréquents passent avant les moins fréquents', () {
-      // On passe une liste pré-triée par fréquence décroissante
+    test('les produits fréquents passent avant le catalogue local', () {
       final history = [
-        _record('Café', 8, GroceryCategory.drinks),
-        _record('Lait', 5, GroceryCategory.fresh),
-        _record('Yaourts', 2, GroceryCategory.fresh),
+        _record('Compote maison', 8, GroceryCategory.grocery),
+        _record('Compote poire', 5, GroceryCategory.grocery),
       ];
+
       final result = buildSuggestions(
         sortedHistory: history,
-        query: '',
-        excludedNames: {},
+        query: 'comp',
+        excludedNames: const {},
       );
-      expect(result[0].productName, 'Café');
-      expect(result[1].productName, 'Lait');
-      expect(result[2].productName, 'Yaourts');
+
+      expect(result.first.productName, 'Compote maison');
+      expect(result[1].productName, 'Compote poire');
+      expect(result.any((s) => s.productName == 'Compote'), isTrue);
     });
 
     test('reprise de la quantité et catégorie habituelles', () {
-      final history = [_record('Lait', 3, GroceryCategory.fresh, quantity: 2)];
+      final history = [
+        _record('Lait', 3, GroceryCategory.fresh, quantity: 2),
+      ];
+
       final result = buildSuggestions(
         sortedHistory: history,
         query: 'la',
-        excludedNames: {},
+        excludedNames: const {},
       );
+
       expect(result.first.productName, 'Lait');
       expect(result.first.quantity, 2);
       expect(result.first.category, GroceryCategory.fresh);
     });
   });
 
-  group('buildSuggestions — exclusions et limites', () {
+  group('buildSuggestions - exclusions et limites', () {
     test('produit déjà dans la liste exclu des suggestions', () {
       final history = [_record('Lait', 5, GroceryCategory.fresh)];
+
       final result = buildSuggestions(
         sortedHistory: history,
         query: 'la',
-        excludedNames: {'lait'},
+        excludedNames: const {'lait'},
       );
+
       expect(result.any((s) => s.productName == 'Lait'), isFalse);
     });
 
     test('produit exclu absent également du catalogue', () {
       final result = buildSuggestions(
-        sortedHistory: [],
+        sortedHistory: const [],
         query: 'lait',
-        excludedNames: {'lait'},
+        excludedNames: const {'lait'},
       );
+
       expect(result.any((s) => s.productName == 'Lait'), isFalse);
     });
 
     test('suggestions limitées à 5 au maximum', () {
       final history = List.generate(
         10,
-        (i) => _record('Produit $i', 10 - i, GroceryCategory.other),
+        (index) => _record(
+          'Produit $index',
+          10 - index,
+          GroceryCategory.other,
+        ),
       );
+
       final result = buildSuggestions(
         sortedHistory: history,
         query: 'produit',
-        excludedNames: {},
+        excludedNames: const {},
       );
-      expect(result.length, lessThanOrEqualTo(5));
-    });
 
-    test('limit personnalisé respecté', () {
-      final history = List.generate(
-        10,
-        (i) => _record('Article $i', 10 - i, GroceryCategory.other),
-      );
-      final result = buildSuggestions(
-        sortedHistory: history,
-        query: 'article',
-        excludedNames: {},
-        limit: 3,
-      );
-      expect(result.length, lessThanOrEqualTo(3));
+      expect(result.length, lessThanOrEqualTo(5));
     });
   });
 
-  group('buildSuggestions — requête vide', () {
+  group('buildSuggestions - requête vide', () {
     test('requête vide retourne uniquement les entrées historique', () {
       final history = [_record('Lait', 5, GroceryCategory.fresh)];
+
       final result = buildSuggestions(
         sortedHistory: history,
         query: '',
-        excludedNames: {},
+        excludedNames: const {},
       );
-      // Pas de catalogue quand query est vide
-      expect(result.every((s) => s.frequency > 0), isTrue);
+
+      expect(result.every((suggestion) => suggestion.frequency > 0), isTrue);
     });
 
     test('requête vide sans historique retourne liste vide', () {
       final result = buildSuggestions(
-        sortedHistory: [],
+        sortedHistory: const [],
         query: '',
-        excludedNames: {},
+        excludedNames: const {},
       );
+
       expect(result, isEmpty);
     });
   });

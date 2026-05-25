@@ -14,6 +14,7 @@ import '../providers/shell_navigation_provider.dart';
 import '../providers/store_preferences_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/grocery_category_utils.dart';
+import '../utils/product_icon_utils.dart';
 import '../utils/product_name_utils.dart';
 import '../utils/promo_utils.dart';
 import '../utils/shopping_trip_utils.dart';
@@ -471,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Expanded(
             child: total == 0
-                ? _EmptyState(
+                ? _KeyboardSafeEmptyState(
                     onQuickAdd: (product) => _addItem(
                       grocery,
                       customName: product.name,
@@ -702,6 +703,10 @@ class _SuggestionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isFromHistory = suggestion.frequency > 0;
+    final productIcon = productIconFor(
+      productName: suggestion.productName,
+      category: suggestion.category,
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
@@ -714,10 +719,19 @@ class _SuggestionTile extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                Icon(
-                  isFromHistory ? Icons.history : Icons.search,
-                  size: 18,
-                  color: AppTheme.colorTextSecondary,
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withAlpha(14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    productIcon,
+                    key: Key('suggestion-icon-${suggestion.productName}'),
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -742,7 +756,11 @@ class _SuggestionTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.add_circle_outline, size: 20),
+                Icon(
+                  isFromHistory ? Icons.history : Icons.add_circle_outline,
+                  size: 20,
+                  color: AppTheme.colorTextSecondary,
+                ),
               ],
             ),
           ),
@@ -1247,6 +1265,7 @@ class _OverviewMetric extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _EmptyState extends StatelessWidget {
   final ValueChanged<QuickStartProduct> onQuickAdd;
 
@@ -1303,6 +1322,80 @@ class _EmptyState extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _KeyboardSafeEmptyState extends StatelessWidget {
+  final ValueChanged<QuickStartProduct> onQuickAdd;
+
+  const _KeyboardSafeEmptyState({required this.onQuickAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    final viewInsets = MediaQuery.of(context).viewInsets;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minHeight = constraints.maxHeight > viewInsets.bottom
+            ? constraints.maxHeight - viewInsets.bottom
+            : 0.0;
+
+        return SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(32, 32, 32, 32 + viewInsets.bottom),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: minHeight),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.shopping_basket_outlined,
+                    size: 72,
+                    color: Colors.grey[300],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Ta liste est vide',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Ajoute tes premiers produits',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Plus tu utilises Caddely, plus l\'app repère tes habitudes et t\'aide à comparer les bons prix.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  ),
+                  const SizedBox(height: 20),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: quickStartProducts
+                        .map(
+                          (product) => ActionChip(
+                            label: Text(product.name),
+                            onPressed: () => onQuickAdd(product),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

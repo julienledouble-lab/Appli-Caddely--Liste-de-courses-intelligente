@@ -557,4 +557,25 @@ void main() {
 
     expect(find.byKey(const Key('suggestion-Pâtes')), findsOneWidget);
   });
+
+  testWidgets('une icône est affichée pour les suggestions', (tester) async {
+    final storage = FakeStorageService()
+      ..groceryItems = [
+        buildItem(
+          id: '1',
+          name: 'Pain',
+          category: GroceryCategory.grocery,
+          addedAt: DateTime(2026, 5, 25),
+        ),
+      ];
+
+    await pumpHomeScreen(tester, storage: storage);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'moz');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('suggestion-Mozzarella')), findsOneWidget);
+    expect(find.byKey(const Key('suggestion-icon-Mozzarella')), findsOneWidget);
+  });
 }
